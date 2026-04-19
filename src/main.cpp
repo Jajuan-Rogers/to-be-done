@@ -1,50 +1,68 @@
-#include <array>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <math.h>
 #include <ncpp/NotCurses.hh>
 #include <ncpp/Plane.hh>
+#include <ncpp/Visual.hh>
+#include <notcurses/notcurses.h>
+#include <stdint.h>
 #include <thread>
+
+uint32_t get_fire_to_indigo(double t) {
+  // Clamp t between 0 and 1 to prevent weird colors
+  t = std::max(0.0, std::min(1.0, t));
+
+  // Start (Fire Red)
+  int sR = 255, sG = 36, sB = 0;
+  // End (Indigo)
+  int eR = 75, eG = 0, eB = 130;
+
+  // Interpolate each channel
+  int r = sR + static_cast<int>(t * (eR - sR));
+  int g = sG + static_cast<int>(t * (eG - sG));
+  int b = sB + static_cast<int>(t * (eB - sB));
+
+  // Recombine into a single hex value (0xRRGGBB)
+  return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) |
+         static_cast<uint32_t>(b);
+}
 
 int main() {
   ncpp::NotCurses nc;
   ncpp::Plane *stdp = nc.get_stdplane();
-  std::array<uint32_t, 5> Color{0x00FF00, 0x00CC00, 0x008200, 0x006800,
-                                0x005300};
+  ncpp::Visual ncv("assets/reaper.jpg");
+
+
+  struct ncvisual_options vopts = {
+    .n = nullptr,
+    .scaling = NCSCALE_SCALE,
+    .y = 2,
+    .x = 5,
+    .blitter = NCBLIT_BRAILLE
+  };
+
+
+  ncpp::Plane* img_plane = ncpp::Plane::from_ncplane(ncv.blit(&vopts));
+  nc.render();
+
   ncinput ni;
 
-  // We will use this to track which color we are on
   int color_index = 0;
 
-  double degrees = 45.0;
-
-  // 1. Convert degrees to radians
-  // Formula: radians = degrees * (PI / 180)
-  double pi = std::acos(-1.0); // A clever way to get a precise PI
-  double radians = degrees * (pi / 180.0);
-  double y = std::sin(radians);
+  double time = 0;
 
   while (true) {
-    // 1. Set the brush color
-    stdp->erase();
-    stdp->set_fg_rgb(Color[color_index]);
-
-    // 2. Draw the text WITH the new brush color
-    stdp->putstr(0, 0, "Press any key to exit...");
-    stdp->putstr(y, radians, "WHOOOOOO !!");
-
+    double t = 0.5 + 0.5 * std::sin(time);
+    uint32_t curr_color = get_fire_to_indigo(t);
+    stdp->set_fg_rgb(curr_color);
+    stdp->putstr(10,10, "Welcome to to-be-done");
     nc.render();
-    color_index = (color_index + 1) % 5;
-    y += pi/2;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    struct timespec ts = {0, 0};
-    uint32_t key = nc.get(&ts, &ni);
+    time += 0.05;
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    if (key != (uint32_t)-1 && key != 0) {
-      break;
-    }
   }
 
   return 0;
