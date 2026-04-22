@@ -1,8 +1,0 @@
-CompileFlags:
-  Add: 
-    - "-I./external_deps/matplot/source"
-    - "-I./external_deps/matplot/build/source"
-    - "-I./external_deps/notcurses/include"
-    - "-std=c++17"
-
-
