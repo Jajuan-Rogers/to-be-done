@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_subdirectory(3rd_party/matplot)
-add_subdirectory(3rd_party/notcurses)
 add_subdirectory(3rd_party/SQLiteCpp)
 
 add_executable(tbd 
